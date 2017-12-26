@@ -3,6 +3,8 @@ import gym
 env = gym.make('FrozenLake-v0') # Create the environment, env of FrozenLake Game
 env.reset()                     # Reset env to initial observation(state)
 
+action_dict = {0:'LEFT', 1:'DOWN', 2:'RIGHT', 3:'UP'}
+
 while True:
     # Agent takes the following action
     action = env.action_space.sample()
@@ -17,7 +19,7 @@ while True:
     state, reward, done, info = env.step(action)
 
     # Performing an Action will result State and Reward
-    print('Action: {}, State: {}, Reward: {}'.format(action, state, reward))
+    print('Action: {}, State: {}, Reward: {}'.format(action_dict[action], state, reward))
 
     if done:
         print('Finished with reward', reward)
