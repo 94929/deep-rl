@@ -4,11 +4,11 @@ env = gym.make('FrozenLake-v0') # Create the environment, env of FrozenLake Game
 env.reset()                     # Reset env to initial observation(state)
 
 while True:
-    # For each iteration, render(display) current observation of env
-    env.render()
-
-    # The action taken by the agent
+    # Agent takes the following action
     action = env.action_space.sample()
+
+    # After each action, env renders(display) the current observation
+    env.render()
 
     # state(i.e. observation) (object): representing your observation of the environment
     # reward (float): amount of reward achieved by the previous action
