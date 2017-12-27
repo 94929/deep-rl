@@ -36,12 +36,26 @@ for i in range(nb_episodes):
     cumulative_reward = 0   # Set the cumulative reward to be zero
     done = False            # Set done to False, is required to enter the loop
 
+    e = 1. / ((i//100)+1)   # Set decaying e value for our algorithm
+
+    """ Why do we do 'i // 100'?
+
+    # Setting reasonable e is crucial because it will affect agent's preference.
+    # If e is too small, it tends to exploit (a lot) rather than explorate env.
+    # Meaning that it won't know what to do when rewards from actions are the same.
+    # Same problem as before, of 'action = np.argmax(Q[state, :])'
+    
+    """
+
     # The Q-Table learning algorithm with discounted reward
     # Q(s, a) = reward + gamma * max.Q'(s', a')
     while not done:
         # Choose an action which maximises the reward (from the current state)
-        # When choosing an action, add random noise for path exploration purpose
-        action = np.argmax(Q[state, :] + np.random.randn(1, nb_actions) / (i + 1))
+        # When choosing an action, use decaying e-greedy algorithm
+        if np.random.rand(1) < e:
+            action = env.action_space.sample()
+        else:
+            action = np.argmax(Q[state, :])
 
         # Receive a feedback after taking the action
         new_state, reward, done, _ = env.step(action)
