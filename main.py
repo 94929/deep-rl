@@ -40,13 +40,8 @@ for i in range(nb_episodes):
     # Q(s, a) = reward + gamma * max.Q'(s', a')
     while not done:
         # Choose an action which maximises the reward (from the current state)
-        """
-        # However, this algorithm is errornous because the agent doesn't know 
-        # what to do at its first step. It will always choose the first action 
-        # in the action space [0,1,2,3] when rewards are the same from a state.
-        # Therefore, the agent keep moves left which doesn't change its state.
-        """
-        action = np.argmax(Q[state, :])
+        # When choosing an action, add random noise for path exploration purpose
+        action = np.argmax(Q[state, :] + np.random.randn(1, nb_actions) / (i + 1))
 
         # Receive a feedback after taking the action
         new_state, reward, done, _ = env.step(action)
