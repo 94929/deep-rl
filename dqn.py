@@ -4,7 +4,7 @@ import numpy as np
 from config import learning_rate
 from config import discount_factor
 
-""" DQN (NIPS 2013 Version)
+""" DQN (Nature 2015 Version)
 
     Issues with Traditional Qnet
     
@@ -30,6 +30,7 @@ class dqn:
 
     # Build and initialize this DQN
     def build(self):
+        # Each dqn (under network name) have separate network itself
         with tf.variable_scope(self.network_name):
             # Define input layer, X
             self.X = tf.placeholder(shape=[None, self.input_size], dtype=tf.float32)
@@ -52,14 +53,14 @@ class dqn:
             # Define output layer, Qpred
             self.Qpred = L3
 
-            # Define our expectation, Y
-            self.Y = tf.placeholder(shape=[None, self.output_size], dtype=tf.float32)
+        # Define our expectation, Y
+        self.Y = tf.placeholder(shape=[None, self.output_size], dtype=tf.float32)
 
-            # Loss function
-            self.loss = tf.reduce_mean(tf.square(self.Y - self.Qpred))
+        # Loss function
+        self.loss = tf.reduce_mean(tf.square(self.Y - self.Qpred))
 
-            # Training using optimizer
-            self.trainer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(self.loss)
+        # Training using optimizer
+        self.trainer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(self.loss)
 
     # Predict the Q-Values (i.e. rewards of actions) from a given state
     def predict(self, state):
@@ -70,7 +71,7 @@ class dqn:
         return self.session.run(self.Qpred, feed_dict={self.X:x})
 
     # Train (i.e. update) DQN using the batch data from the replay buffer
-    def train(self, batch):
+    def train(self, target_dqn, batch):
         x_stack = np.empty(0).reshape(0, self.input_size)
         y_stack = np.empty(0).reshape(0, self.output_size)
 
@@ -80,7 +81,8 @@ class dqn:
             if done:
                 Q[0, action] = reward
             else:
-                Q[0, action] = reward + discount_factor*np.max(self.predict(next_state))
+                # When updating, use target_dqn to predict recursive rewards
+                Q[0, action] = reward + discount_factor*np.max(target_dqn.predict(next_state))
 
             x_stack = np.vstack([x_stack, state])
             y_stack = np.vstack([y_stack, Q])
@@ -106,3 +108,17 @@ class dqn:
                 print('nb_steps:', step_count)
                 break
 
+    # Copy variable operations from a given dqn
+    def get_var_ops(self, src_dqn):
+        ops = []
+
+        src_vars = tf.get_collection(
+            tf.GraphKeys.TRAINABLE_VARIABLES, scope=src_dqn.network_name)
+        dest_vars = tf.get_collection(
+            tf.GraphKeys.TRAINABLE_VARIABLES, self.network_name)
+
+        # Copy src into dst in terms of ops of dqn
+        for src_var, dest_var in zip(src_vars, dest_vars):
+            ops.append(dest_var.assign(src_var.value()))
+
+        return ops

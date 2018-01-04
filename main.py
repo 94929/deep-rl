@@ -11,19 +11,24 @@ env = gym.make('CartPole-v0')
 env._max_episode_steps = 10000
 
 # Set hyper-parameters required for dqn algorithm
-input_size  = env.observation_space.shape[0] # (4,)
-output_size = env.action_space.n             # 2
+input_size  = env.observation_space.shape[0] 
+output_size = env.action_space.n             
 
 nb_episodes = 1000  # number of episodes
-gamma = .99         # discount factor
 
-REPLAY_MEMORY = 1000
+REPLAY_MEMORY = 2500
 replay_buffer = collections.deque(maxlen=REPLAY_MEMORY)
 
 with tf.Session() as sess:
     
-    main_dqn = dqn(sess, input_size, output_size)
+    main_dqn = dqn(sess, input_size, output_size, name='main')
+    target_dqn = dqn(sess, input_size, output_size, name='target')
+
     sess.run(tf.global_variables_initializer())
+
+    # Create a variable which holds the copy of main_dqn which will be copied to target_dqn
+    copy_ops = target_dqn.get_var_ops(main_dqn)
+
     for episode in range(nb_episodes):
     
         state = env.reset()
@@ -59,11 +64,15 @@ with tf.Session() as sess:
 
         # Train DQN every 10 episodes
         if episode >= 10 and episode % 10 == 0:
+            
             # Train for 100 iteration
             for _ in range(100):
                 batch = random.sample(replay_buffer, 10)
-                loss, _ = main_dqn.train(batch)
-                print('Current DQN Loss:', loss)
+                loss, _ = main_dqn.train(target_dqn, batch)
+                print('Current Loss:', loss)
+
+            # Copy the network, target_dqn = main_dqn
+            sess.run(copy_ops)
 
     # Try to run the game after training the network
     main_dqn.run(env)
